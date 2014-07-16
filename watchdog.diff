@@ -1,0 +1,13 @@
+diff --git a/src/watchdog/observers/inotify_c.py b/src/watchdog/observers/inotify_c.py
+index c7e4736..b497a27 100644
+--- a/src/watchdog/observers/inotify_c.py
++++ b/src/watchdog/observers/inotify_c.py
+@@ -512,7 +512,7 @@ class InotifyEvent(object):
+ 
+     @property
+     def is_create(self):
+-        return self._mask & InotifyConstants.IN_CREATE > 0
++        return self._mask & InotifyConstants.IN_CLOSE_WRITE > 0
+ 
+     @property
+     def is_moved_from(self):
