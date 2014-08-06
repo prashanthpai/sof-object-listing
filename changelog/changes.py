@@ -64,22 +64,26 @@ def process_change_file(file):
 
     for e in clist:
         e = e.strip()
+        print e
         et = e[IDX_START:IDX_END]    # entry type
         ec = e[IDX_END:].split(' ')  # rest of the bits
+
+        print len(ec)
 
         # We only care about creation and deletions.
         # In changelog terminology, this is an ENTRY operation.
         if et == TYPE_ENTRY:
             # Type of entry operation
             ty = ec[POS_TYPE]
+            gfid = ec[POS_GFID]
             # We deal only with files, for now.
             # UNLINK change is of no use to us as we cannot get path
             # from gfid for a deleted file.
+            #print "%s %s" % (ty, gfid)
             if ty in ('CREATE'):
                 # GFID of the entry
-                gfid = ec[POS_GFID]
                 path = gfid_to_path(gfid)
-                print "%s %s %s" % (ty, gfid, path)
+                #print "%s %s %s" % (ty, gfid, path)
                 if path and path_is_object(path) and \
                         not created_by_sof(path):
                     # Update container DB directly or do a pickle dump
