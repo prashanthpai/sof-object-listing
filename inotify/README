@@ -1,0 +1,16 @@
+Tested on Fedora
+
+1. yum install inotify-tools, erlang
+2. Download and install rabbitmq from: https://www.rabbitmq.com/install-rpm.html
+   yum localinstall ./rabbitmq-server-3.3.4-1.noarch.rpm
+3. pip install pika
+4. service rabbitmq-server start
+   chkconfig rabbitmq-server on
+
+Assuming you already have SAIO setup with SOF configured as a storage policy.
+
+Start inotifywait.py: This listens for file creation/deletion events and if relevant to SOF, puts it a RabbitMQ queue.
+./inotifywait /mnt/brick-test/b
+
+Start daemon.py: This consumes the RabbitMQ queue and sends requests to container-server to add/remove entries from container DB
+./daemon.py /mnt/brick-test/b 2

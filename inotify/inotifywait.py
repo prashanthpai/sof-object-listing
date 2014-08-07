@@ -4,6 +4,7 @@ import os
 import pika
 import re
 import shlex
+import signal
 import subprocess
 import sys
 import xattr
@@ -111,14 +112,21 @@ def main():
     args = shlex.split("inotifywait -rm -e create,delete --format '%:e %w%f'")
     args.append(dirpath)
 
-    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=None)
+
+    def signal_handler(signal, frame):
+        print('You pressed Ctrl+C. Exiting gracefully.')
+        queue.close()
+        p.kill()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
 
     while p.poll() is None:
         line = p.stdout.readline()  # This blocks until it receives a newline.
         if not line:
             break
         parse_inotifywait_line(line, dirpath, queue)
-
 
 if __name__ == '__main__':
     main()

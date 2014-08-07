@@ -14,6 +14,10 @@ from swift.common.exceptions import ConnectionTimeout
 from swift.common.utils import generate_trans_id, \
     normalize_timestamp, split_path
 
+DISK_READ_CHUNK_SIZE = 65536
+DEVICE_PATH = '/mnt/brick-test/b/'
+SP_INDEX = 2
+
 
 def get_container_ring():
     return Ring('/etc/swift', ring_name='container')
@@ -57,9 +61,6 @@ def compute_etag(fd):
             break
     return etag.hexdigest()
 
-DISK_READ_CHUNK_SIZE = 65536
-SP = 2
-
 
 def update_container(op, obj_path, device_path):
 
@@ -84,7 +85,7 @@ def update_container(op, obj_path, device_path):
 
     headers_out['X-Trans-Id'] = generate_trans_id('')
     headers_out['User-Agent'] = 'SwiftOnFile watcher'
-    headers_out['X-Backend-Storage-Policy-Index'] = str(SP)
+    headers_out['X-Backend-Storage-Policy-Index'] = str(SP_INDEX)
 
     data = {'op': op, 'account': account, 'container': container,
             'obj': obj, 'headers': headers_out}
@@ -93,7 +94,7 @@ def update_container(op, obj_path, device_path):
 
 
 def callback(channel, method, headers, body):
-    print "GOT: %r" % (body,)
+    print("GOT: %r" % (body,))
     if body.startswith("PUT"):
         path = body[(len('PUT')+1):]
         op = 'PUT'
@@ -106,14 +107,14 @@ def callback(channel, method, headers, body):
     data = update_container(op, path, DEVICE_PATH)
     process_object_update(data)
 
-DEVICE_PATH = '/mnt/brick-test/b/'
 
 def main():
 
     global DEVICE_PATH
+    global SP_INDEX
 
-    if len(sys.argv) != 2:
-        print("Usage: %s <dir/mountpoint>" % (sys.argv[0]))
+    if len(sys.argv) != 3:
+        print("Usage: %s <mountpoint> <sp-index>" % (sys.argv[0]))
         sys.exit(1)
 
     if os.path.isdir(sys.argv[1]):
@@ -121,6 +122,8 @@ def main():
     else:
         print("%s is not a directory" % (sys.argv[1]))
         sys.exit(1)
+
+    SP_INDEX = sys.argv[2]
 
     connection = pika.BlockingConnection(pika.ConnectionParameters(
                                          host='localhost'))
