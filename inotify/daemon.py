@@ -75,9 +75,11 @@ def update_container(op, obj_path, device_path):
         except OSError:
             return
         stat = os.fstat(fd)
-        headers_out['X-Size'] = str(stat.st_size)
+        headers_out['X-Size'] = str(stat.st_size)  # Not accurate
         headers_out['X-Timestamp'] = normalize_timestamp(stat.st_mtime)
-        headers_out['X-Etag'] = str(compute_etag(fd))
+#        headers_out['X-Etag'] = str(compute_etag(fd))
+        # Don't compute as the file could still be open for writing
+        headers_out['X-Etag'] = str('0'*32)
         os.close(fd)
         headers_out['X-Content-Type'] = 'application/octet-stream'
     elif op == 'DELETE':
