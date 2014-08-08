@@ -1,0 +1,80 @@
+From 3c981f2dd6b2fb25ee6f6264ba40ab84eb7b64df Mon Sep 17 00:00:00 2001
+From: Prashanth Pai <ppai@redhat.com>
+Date: Fri, 8 Aug 2014 12:07:15 +0530
+Subject: [PATCH] Rename files to .ts before deletion
+
+Signed-off-by: Prashanth Pai <ppai@redhat.com>
+---
+ etc/object-server.conf-swiftonfile |  6 ++++++
+ swiftonfile/swift/obj/diskfile.py  | 11 +++++++++--
+ swiftonfile/swift/obj/server.py    |  4 +++-
+ 3 files changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/etc/object-server.conf-swiftonfile b/etc/object-server.conf-swiftonfile
+index 262256f..bfc073f 100644
+--- a/etc/object-server.conf-swiftonfile
++++ b/etc/object-server.conf-swiftonfile
+@@ -48,3 +48,9 @@ disk_chunk_size = 65536
+ # Adjust this value match whatever is set for the disk_chunk_size initially.
+ # This will provide a reasonable starting point for tuning this value.
+ network_chunk_size = 65536
++#
++# Set this to true if objects should be renamed to .ts file before deletion.
++# This could be useful for backend monitoring utilities such as inotify
++# listeners to differentiate between deletes performed over Swift vs those
++# performed over mount point.
++rename_before_delete = false
+diff --git a/swiftonfile/swift/obj/diskfile.py b/swiftonfile/swift/obj/diskfile.py
+index 9515db2..bb43dd9 100644
+--- a/swiftonfile/swift/obj/diskfile.py
++++ b/swiftonfile/swift/obj/diskfile.py
+@@ -613,6 +613,8 @@ class DiskFile(object):
+             self._put_datadir = self._datadir
+         self._data_file = os.path.join(self._put_datadir, self._obj)
+ 
++        self.rename_before_delete = self._mgr.rename_before_delete
++
+     def open(self):
+         """
+         Open the object.
+@@ -1003,8 +1005,13 @@ class DiskFile(object):
+                 write_metadata(self._data_file, metadata)
+             rmobjdir(self._data_file)
+         else:
+-            # Delete file object
+-            do_unlink(self._data_file)
++            if self.rename_before_delete:
++                # First rename and then delete.
++                do_rename(self._data_file, self._data_file + '.ts')
++                do_unlink(self._data_file + '.ts')
++            else:
++                # Direct delete
++                do_unlink(self._data_file)
+ 
+         # Garbage collection of non-object directories.  Now that we
+         # deleted the file, determine if the current directory and any
+diff --git a/swiftonfile/swift/obj/server.py b/swiftonfile/swift/obj/server.py
+index cec3809..17915f2 100644
+--- a/swiftonfile/swift/obj/server.py
++++ b/swiftonfile/swift/obj/server.py
+@@ -17,7 +17,7 @@
+ 
+ import swiftonfile.swift.common.constraints    # noqa
+ from swift.common.swob import HTTPConflict
+-from swift.common.utils import public, timing_stats
++from swift.common.utils import public, timing_stats, config_true_value
+ from swiftonfile.swift.common.exceptions import AlreadyExistsAsFile, \
+     AlreadyExistsAsDir
+ from swift.common.request_helpers import split_and_validate_path
+@@ -45,6 +45,8 @@ class ObjectController(server.ObjectController):
+         # Common on-disk hierarchy shared across account, container and object
+         # servers.
+         self._diskfile_mgr = DiskFileManager(conf, self.logger)
++        self._diskfile_mgr.rename_before_delete = \
++            config_true_value(conf.get('rename_before_delete', 'false'))
+ 
+     def get_diskfile(self, device, partition, account, container, obj,
+                      policy_idx, **kwargs):
+-- 
+1.8.5.3
+

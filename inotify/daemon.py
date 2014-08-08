@@ -134,7 +134,13 @@ def main():
     channel.basic_consume(callback,
                           queue='sof',
                           no_ack=True)
-    channel.start_consuming()
+
+    try:
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        print("Keyboard Interrupt. Exiting gracefully")
+        channel.stop_consuming()
+    connection.close()
 
 
 if __name__ == '__main__':

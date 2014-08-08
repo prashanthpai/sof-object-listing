@@ -28,6 +28,7 @@ class EventsQueue(object):
         print("SENT: %s" % (message))
 
     def close(self):
+        self.channel.close()
         self.connection.close()
 
 
@@ -51,7 +52,7 @@ def op_by_sof(op, path):
 
     elif op == 'DELETE':
         # SOF renames files to .ts before deletion
-        return path[:3] == '.ts'
+        return path.strip().endswith('.ts')
 
 
 def parse_inotifywait_line(line, device_path, queue):
@@ -109,13 +110,14 @@ def main():
     # Using inotifywait as it is a simple recursive implementation
     # watchdog does not expose IN_CLOSE_WRITE whereas pyinotify is not
     # recursive in realtime
-    args = shlex.split("inotifywait -rm -e create,delete --format '%:e %w%f' --exclude=.glusterfs")
+    args = shlex.split("inotifywait -rm -e create,delete --format '%:e %w%f' "
+                       "--exclude=.glusterfs")
     args.append(dirpath)
 
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=None)
 
     def signal_handler(signal, frame):
-        print('You pressed Ctrl+C. Exiting gracefully.')
+        print('Keyboard Interrupt. Exiting gracefully.')
         queue.close()
         p.kill()
         sys.exit(0)

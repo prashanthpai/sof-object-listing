@@ -9,8 +9,19 @@ Tested on Fedora
 
 Assuming you already have SAIO setup with SOF configured as a storage policy.
 
-Start inotifywait.py: This listens for file creation/deletion events and if relevant to SOF, puts it a RabbitMQ queue.
-./inotifywait /mnt/brick-test/b
+STEP 1:
 
-Start daemon.py: This consumes the RabbitMQ queue and sends requests to container-server to add/remove entries from container DB
+./inotifywait /mnt/swiftonfile/test
+
+This listens for file creation/deletion events and if relevant to SOF, puts it in a RabbitMQ queue.
+Ideally, we would want to monitor brick directory "/mnt/brick-test/b" but currently, .glusterfs
+directory inside brick is exhausting too many inotify watches. Until that's addressed, we stick
+to glusterfs mount point.
+
+
+STEP 2:
+
 ./daemon.py /mnt/brick-test/b 2
+
+This consumes the RabbitMQ queue and sends requests to container-server to add/remove entries from container DB
+In the above example, 2 is the SP index assigned to SOF storage policy.
