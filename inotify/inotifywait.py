@@ -111,7 +111,7 @@ def main():
     # watchdog does not expose IN_CLOSE_WRITE whereas pyinotify is not
     # recursive in realtime
     args = shlex.split("inotifywait -rm -e create,delete --format '%:e %w%f' "
-                       "--exclude=.glusterfs")
+                       "--exclude=.*.glusterfs.*")
     args.append(dirpath)
 
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=None)
