@@ -69,18 +69,19 @@ def update_container(op, obj_path, device_path):
     headers_out = {}
 
     if op == 'PUT':
-        try:
-            file_path = os.path.join(device_path, obj_path[1:])
-            fd = os.open(file_path, os.O_RDONLY)
-        except OSError:
-            return
-        stat = os.fstat(fd)
-        headers_out['X-Size'] = str(stat.st_size)  # Not accurate
-        headers_out['X-Timestamp'] = normalize_timestamp(stat.st_mtime)
+#        try:
+#            file_path = os.path.join(device_path, obj_path[1:])
+#            fd = os.open(file_path, os.O_RDONLY)
+#        except OSError:
+#            return
+#        stat = os.fstat(fd)
+#        headers_out['X-Size'] = str(stat.st_size)  # Not accurate
+        headers_out['X-Size'] = 1
+        headers_out['X-Timestamp'] = normalize_timestamp(time.time())
 #        headers_out['X-Etag'] = str(compute_etag(fd))
         # Don't compute as the file could still be open for writing
         headers_out['X-Etag'] = str('0'*32)
-        os.close(fd)
+#        os.close(fd)
         headers_out['X-Content-Type'] = 'application/octet-stream'
     elif op == 'DELETE':
         headers_out['X-Timestamp'] = normalize_timestamp(time.time())

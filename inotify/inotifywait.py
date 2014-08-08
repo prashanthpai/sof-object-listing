@@ -21,11 +21,14 @@ class EventsQueue(object):
         self.channel = self.connection.channel()
         self.channel.queue_declare(queue=self.name)
 
+        self.message_count = 0
+
     def enqueue(self, message):
         self.channel.basic_publish(exchange='',
                                    routing_key=self.name,
                                    body=message)
         print("SENT: %s" % (message))
+        self.message_count += 1
 
     def close(self):
         self.channel.close()
@@ -118,6 +121,7 @@ def main():
 
     def signal_handler(signal, frame):
         print('Keyboard Interrupt. Exiting gracefully.')
+        print('Total messages queued %d' % (queue.message_count))
         queue.close()
         p.kill()
         sys.exit(0)
